@@ -114,8 +114,8 @@ The sign-in stays valid as long as the Kobo uses it at least once every
 
 ## Use
 
-Open a book, tap the middle of the page to show the reading menu, and tap the
-NickleGPT button in the bottom row. Or select some text and choose
+Open a book, tap the top of the page to show the reading menu, and tap the
+NickleGPT button in the top row. Or select some text and choose
 **Ask ChatGPT**.
 
 The first 30 seconds after the Kobo starts, NickleGPT stays inactive on
