@@ -1,0 +1,1 @@
+menu_item :main :Restore plugins after a crash :cmd_output :7000 :/bin/sh /mnt/onboard/.adds/nm/scripts/restore_plugins.sh

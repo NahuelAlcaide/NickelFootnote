@@ -1,0 +1,64 @@
+name: Build
+
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  NICKELTC: ghcr.io/pgaskin/nickeltc:1.0
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0 # git describe needs the tags
+
+      - name: Build
+        run: |
+          version=$(git describe --tags --always --dirty)
+          version=${version#v}
+          echo "Version: $version"
+          docker run --rm -v "$PWD:/src" -w /src "$NICKELTC" \
+            sh -c "make NGPT_VERSION=$version && make koboroot NGPT_VERSION=$version"
+
+      # A global named like a libnickel symbol gets bound to Nickel's own copy
+      # and crashes Nickel (docs/DEVELOPING.md, lesson 1).
+      - name: Check exported symbols
+        run: |
+          unexpected=$(docker run --rm -v "$PWD:/src" -w /src "$NICKELTC" \
+            arm-nickel-linux-gnueabihf-nm -D --defined-only libnicklegpt.so \
+            | grep -vE ' [Ww] ' \
+            | grep -vE ' (NickelHook|_ngpt_.*|nh_.*|qt_plugin_.*|_init|_fini)$' || true)
+          if [ -n "$unexpected" ]; then
+            echo "Unexpected exported symbols:"
+            echo "$unexpected"
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KoboRoot
+          path: KoboRoot.tgz
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: KoboRoot
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" KoboRoot.tgz --repo "$GITHUB_REPOSITORY" --draft --generate-notes --title "$GITHUB_REF_NAME"

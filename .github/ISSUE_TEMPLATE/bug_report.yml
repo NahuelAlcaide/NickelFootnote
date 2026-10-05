@@ -1,0 +1,43 @@
+name: Bug report
+description: Something doesn't work or crashes.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device
+      placeholder: Kobo Clara Colour
+    validations:
+      required: true
+  - type: input
+    id: firmware
+    attributes:
+      label: Firmware version
+      description: Settings > Device information > Software version.
+      placeholder: 4.45.23697
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: NickleGPT version
+      description: The first `init:` line of log.txt shows it.
+      placeholder: 0.1.0
+  - type: input
+    id: plugins
+    attributes:
+      label: Other plugins installed
+      placeholder: NickelMenu, NickelHardcover, ...
+  - type: textarea
+    id: log
+    attributes:
+      label: log.txt
+      description: Attach or paste `.adds/nicklegpt/log.txt`. If Nickel crashed, also attach `.kobo/stack_00.log`.
+      render: text

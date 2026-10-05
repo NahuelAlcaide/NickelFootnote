@@ -1,0 +1,1 @@
+menu_item :main :NickleGPT debug log :cmd_output :7000 :/bin/sh /mnt/onboard/.adds/nm/scripts/nicklegpt_debug.sh

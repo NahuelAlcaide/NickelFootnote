@@ -1,0 +1,18 @@
+# Build output
+*.o
+*.moc
+/src/version.h
+/src/version.h.tmp
+/KoboRoot.tgz
+/libnicklegpt.so
+
+# Sign-in tokens (tools/signin.py)
+.secrets/
+
+# Python
+__pycache__/
+
+# Local development notes, not published
+/HANDOFF.md
+/SIGNIN_FEASIBILITY.md
+/Screenshots/
