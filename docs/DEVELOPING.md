@@ -46,6 +46,7 @@ src/log.*               persistent log, startup grace, crash guards
 src/chainhook.*         PLT hook that chains to an earlier plugin's hook
 tools/signin.py         PC-side sign-in (login/push/pull) and test commands (models/ask)
 tools/find_callers.py   call-site scanner for libnickel PLT imports
+tools/readme_images.py  frames docs/images/screens/*.png into the README images
 tools/nickelmenu/       NickelMenu items: debug log dump, plugin recovery
 ```
 

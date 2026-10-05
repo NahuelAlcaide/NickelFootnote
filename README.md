@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/hero.svg" width="720" alt="The answer view on a Kobo Clara Colour">
+  <img src="docs/images/hero.png" width="760" alt="The Footnote button in the reading menu, and an answer that declines to spoil a later chapter">
 </p>
 
 > [!WARNING]
@@ -42,9 +42,9 @@ and the model is told to answer only from what you've already read.
   lore terms each get their own colour (configurable).
 
 <p align="center">
-  <img src="docs/images/screenshot-ask.svg" width="250" alt="Ask view">
-  <img src="docs/images/screenshot-book-info.svg" width="250" alt="Book info view">
-  <img src="docs/images/screenshot-answer.svg" width="250" alt="Answer view">
+  <img src="docs/images/frame-selection.png" width="250" alt="Ask Footnote in the selection menu">
+  <img src="docs/images/frame-ask.png" width="250" alt="Ask view with the book info that will be sent">
+  <img src="docs/images/frame-book-info.png" width="250" alt="Book info view for correcting the series, book and chapter">
 </p>
 
 ### Spoiler protection is not guaranteed
