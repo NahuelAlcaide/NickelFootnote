@@ -520,7 +520,7 @@ AskView::AskView(Footnote *app) : NfnView(QStringLiteral("Ask Footnote"), false)
         qcol->addWidget(label(QStringLiteral("QUOTED PASSAGE (SENT ALONG)"), "caption"));
         QString shown = quote.size() > SHOWN_QUOTE_CHARS ? quote.left(SHOWN_QUOTE_CHARS) + QString::fromUtf8("\xe2\x80\xa6")
                                                          : quote;
-        qcol->addWidget(label(QString::fromUtf8("\xe2\x80\x9c") + shown + QString::fromUtf8("\xe2\x80\x9d"), "italic"));
+        qcol->addWidget(label(shown, "italic"));
         qrow->addLayout(qcol, 1);
         qrow->addWidget(button(QStringLiteral("Remove"), false, SLOT(remove_quote())), 0, Qt::AlignTop);
         col->addWidget(m_quote_box);
@@ -764,9 +764,16 @@ void AnswerView::render(bool toLatest) {
             QString q = t.quote.size() > SHOWN_QUOTE_CHARS * 2
                             ? t.quote.left(SHOWN_QUOTE_CHARS * 2) + QString::fromUtf8("\xe2\x80\xa6")
                             : t.quote;
-            html += QStringLiteral("<p style=\"margin-left: %1px; font-size: %2px; color: #444444;\">"
-                                   "<i>Quoted: \xe2\x80\x9c").arg(px()).arg(px(0.85)) +
-                    q.toHtmlEscaped() + QString::fromUtf8("\xe2\x80\x9d</i></p>");
+            // Like the ask view's quote: a black bar on the left (a narrow
+            // table cell, since Qt rich text has no per-side borders), then a
+            // caption and the passage with the book's own quote marks.
+            html += QStringLiteral("<table border=\"0\" cellspacing=\"0\" cellpadding=\"0\"><tr>"
+                                   "<td width=\"4\" bgcolor=\"#000000\"></td><td width=\"%1\"></td><td>"
+                                   "<p style=\"margin-top: 0; margin-bottom: 2px; font-size: %2px; "
+                                   "font-weight: bold; color: #555555;\">YOU QUOTED</p>"
+                                   "<p style=\"margin-top: 0; margin-bottom: 0; font-size: %3px;\"><i>")
+                        .arg(px(0.8) / 2).arg(px(0.72)).arg(px(0.9)) +
+                    q.toHtmlEscaped().replace("\n", "<br>") + "</i></p></td></tr></table>";
         }
         if (!t.answer.isEmpty())
             html += markdown_to_html(t.answer);

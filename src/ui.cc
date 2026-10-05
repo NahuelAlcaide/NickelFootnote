@@ -132,6 +132,13 @@ QTextEdit *NfnView::text_edit(QString const &placeholder, QWidget **container) {
     if (!placeholder.isEmpty())
         TouchTextEdit_setCustomPlaceholderText(touch, &placeholder);
     connect(touch, SIGNAL(tapped()), this, SLOT(show_keyboard()));
+    // TouchTextEdit's character counter starts as "0" and is only emptied by
+    // the first text change (we set no minimum or maximum), so an empty field
+    // would show a stray "0".
+    if (QLabel *count = touch->findChild<QLabel*>(QStringLiteral("characterCount")))
+        count->clear();
+    else
+        nfn_log("ui: TouchTextEdit has no characterCount label");
     *container = touch;
     return touch->findChild<QTextEdit*>();
 }
