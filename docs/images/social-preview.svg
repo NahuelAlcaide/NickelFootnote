@@ -1,4 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640">
-  <rect x="1" y="1" width="1278" height="638" rx="12" fill="#f2f2f2" stroke="#999" stroke-width="2" stroke-dasharray="10 8"/>
-  <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-size="22" fill="#666">Placeholder: social preview (1280x640)</text>
+  <rect width="1280" height="640" fill="#F4EFE6"/>
+  <rect x="120" y="200" width="240" height="240" rx="52" fill="#1C1B19"/>
+  <g transform="translate(150 228) scale(7.5)" fill="none" stroke="#F4EFE6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4.5h14a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-8l-4.2 3v-3H5a2 2 0 0 1-2-2V6.5a2 2 0 0 1 2-2z"/><path d="M12 8v5.2M9.75 9.3l4.5 2.6M14.25 9.3l-4.5 2.6"/></g>
+  <text x="430" y="300" font-family="Georgia, 'Times New Roman', serif" font-size="84" fill="#1C1B19">NickelFootnote</text>
+  <text x="432" y="370" font-family="Georgia, 'Times New Roman', serif" font-size="34" fill="#4A4740">Ask about the book you're reading on your Kobo,</text>
+  <text x="432" y="418" font-family="Georgia, 'Times New Roman', serif" font-size="34" fill="#4A4740">without spoilers.</text>
+  <path d="M432 470h120" stroke="#1C1B19" stroke-width="3"/>
+  <text x="432" y="512" font-family="Georgia, 'Times New Roman', serif" font-size="24" fill="#4A4740">A NickelHook plugin · GPL-3.0</text>
 </svg>

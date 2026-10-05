@@ -12,21 +12,21 @@
 #include "chainhook.h"
 #include "log.h"
 
-void *ngpt_chain_hook(const char *libname, const char *sym, void *target) {
+void *nfn_chain_hook(const char *libname, const char *sym, void *target) {
     void *lib = dlopen(libname, RTLD_LAZY | RTLD_NODELETE); // as NickelHook does; already loaded
     if (!lib) {
-        ngpt_log("hook: %s not loaded", libname);
+        nfn_log("hook: %s not loaded", libname);
         return nullptr;
     }
     void *real = dlsym(lib, sym);
     if (!real) {
-        ngpt_log("hook: %s not found", sym);
+        nfn_log("hook: %s not found", sym);
         return nullptr;
     }
 
     struct link_map *lm;
     if (dlinfo(lib, RTLD_DI_LINKMAP, &lm)) {
-        ngpt_log("hook: no link_map for %s", libname);
+        nfn_log("hook: no link_map for %s", libname);
         return nullptr;
     }
 
@@ -46,7 +46,7 @@ void *ngpt_chain_hook(const char *libname, const char *sym, void *target) {
         }
     }
     if (rela || !plt || !ent_sz || ent_sz != sizeof(ElfW(Rel)) || !symtab || !strtab) {
-        ngpt_log("hook: unexpected DT_DYNAMIC in %s", libname);
+        nfn_log("hook: unexpected DT_DYNAMIC in %s", libname);
         return nullptr;
     }
 
@@ -77,15 +77,15 @@ void *ngpt_chain_hook(const char *libname, const char *sym, void *target) {
         long page = sysconf(_SC_PAGESIZE);
         void *got_page = (void*)((size_t)got & ~(page - 1));
         if (mprotect(got_page, page, PROT_READ | PROT_WRITE)) {
-            ngpt_log("hook: mprotect failed for %s", sym);
+            nfn_log("hook: mprotect failed for %s", sym);
             return nullptr;
         }
         *got = target;
-        ngpt_log("hook: %s: previous %p (%s), calling %s", sym, prev, owner,
+        nfn_log("hook: %s: previous %p (%s), calling %s", sym, prev, owner,
                  next == real ? "the original" : "the earlier hook");
         return next;
     }
 
-    ngpt_log("hook: %s has no PLT entry in %s", sym, libname);
+    nfn_log("hook: %s has no PLT entry in %s", sym, libname);
     return nullptr;
 }

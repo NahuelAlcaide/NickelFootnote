@@ -1,6 +1,6 @@
 # Why sign-in happens on the computer
 
-NickleGPT uses OpenAI's [Sign in with ChatGPT](https://developers.openai.com/siwc/token-sharing-open-source)
+NickelFootnote uses OpenAI's [Sign in with ChatGPT](https://developers.openai.com/siwc/token-sharing-open-source)
 for open-source apps, so questions use your ChatGPT plan. Today the sign-in
 runs on a computer (`tools/signin.py login`) and the tokens are then copied to
 the Kobo (`push`). This page explains why, and what could make it easier
@@ -13,7 +13,7 @@ challenge, and listens on `http://127.0.0.1:1455/auth/callback`. After you
 sign in, the browser is redirected there; the script checks the state,
 exchanges the code for tokens and saves them in `.secrets/auth.json`.
 
-`push` copies the tokens to `.adds/nicklegpt/auth.json` on the Kobo and
+`push` copies the tokens to `.adds/nickelfootnote/auth.json` on the Kobo and
 deletes them from the computer. The refresh token rotates on every refresh, so
 whichever side refreshes first would make the other side's copy useless. The
 tokens have to live in exactly one place. `pull` moves them back.

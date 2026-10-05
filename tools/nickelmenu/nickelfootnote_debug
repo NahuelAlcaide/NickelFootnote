@@ -1,0 +1,1 @@
+menu_item :main :NickelFootnote debug log :cmd_output :7000 :/bin/sh /mnt/onboard/.adds/nm/scripts/nickelfootnote_debug.sh

@@ -1,5 +1,5 @@
 name: Compatibility report
-description: Tell us whether NickleGPT works on your device and firmware.
+description: Tell us whether NickelFootnote works on your device and firmware.
 labels: [compatibility]
 body:
   - type: input
@@ -19,7 +19,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: NickleGPT version
+      label: NickelFootnote version
       placeholder: 0.1.0
     validations:
       required: true
@@ -29,7 +29,7 @@ body:
       label: What works?
       options:
         - label: Reading menu button
-        - label: Ask ChatGPT in the selection menu
+        - label: Ask Footnote in the selection menu
         - label: Series, book and chapter detected correctly
         - label: Answers arrive (Wi-Fi, sign-in, streaming)
         - label: Colours show (colour screens only)
@@ -37,5 +37,5 @@ body:
     id: notes
     attributes:
       label: Notes and log
-      description: Anything odd, plus the first ~20 lines of `.adds/nicklegpt/log.txt`.
+      description: Anything odd, plus the first ~20 lines of `.adds/nickelfootnote/log.txt`.
       render: text

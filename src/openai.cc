@@ -17,7 +17,7 @@
 #include "openai.h"
 #include "store.h"
 
-static const char *AUTH_PATH = NGPT_DIR "/auth.json";
+static const char *AUTH_PATH = NFN_DIR "/auth.json";
 static const char *TOKEN_URL = "https://auth.openai.com/api/accounts/oauth/token";
 static const char *RESPONSES_URL = "https://api.openai.com/v1/responses";
 static const char *API_RESOURCE = "https://api.openai.com/v1";
@@ -69,7 +69,7 @@ void ChatClient::send(QJsonArray const &input, QString const &instructions) {
 void ChatClient::cancel() {
     if (!m_busy)
         return;
-    ngpt_log("chat: cancelled");
+    nfn_log("chat: cancelled");
     m_generation++;
     m_busy = false;
     m_waiting_wifi = false;
@@ -91,7 +91,7 @@ void ChatClient::finish(bool ok, QString const &error) {
     m_waiting_wifi = false;
     m_timer->stop();
     m_stall_timer->stop();
-    ngpt_log("chat: %s (%d chars, %d sources)%s%s", ok ? "done" : "failed", m_text.size(), m_sources.size(),
+    nfn_log("chat: %s (%d chars, %d sources)%s%s", ok ? "done" : "failed", m_text.size(), m_sources.size(),
              error.isEmpty() ? "" : ": ", qPrintable(error.left(200)));
     emit finished(ok, m_text, error, m_sources);
 }
@@ -101,7 +101,7 @@ void ChatClient::finish(bool ok, QString const &error) {
 void ChatClient::stalled() {
     if (!m_busy || !m_reply)
         return;
-    ngpt_log("chat: no response after %ds%s", STALL_TIMEOUT_MS / 1000, m_retried_stall ? "" : ", retrying");
+    nfn_log("chat: no response after %ds%s", STALL_TIMEOUT_MS / 1000, m_retried_stall ? "" : ", retrying");
     m_reply->setProperty("stalled", true);
     m_reply->abort(); // reply_finished handles it
 }
@@ -111,7 +111,7 @@ void ChatClient::timed_out() {
         wifi_failed();
         return;
     }
-    ngpt_log("chat: timed out");
+    nfn_log("chat: timed out");
     if (m_reply) {
         m_reply->setProperty("timedOut", true);
         m_reply->abort(); // reply_finished / refresh_finished reports it
@@ -128,7 +128,7 @@ void ChatClient::ensure_network() {
         ensure_token();
         return;
     }
-    ngpt_log("chat: connecting Wi-Fi");
+    nfn_log("chat: connecting Wi-Fi");
     emit progress(QStringLiteral("Connecting to Wi-Fi..."));
     m_waiting_wifi = true;
     if (QObject *wm = WirelessManager_sharedInstance())
@@ -143,7 +143,7 @@ void ChatClient::wifi_connected() {
         return;
     m_waiting_wifi = false;
     m_timer->stop();
-    ngpt_log("chat: Wi-Fi connected");
+    nfn_log("chat: Wi-Fi connected");
     // Let Nickel finish its own network setup (DNS, time) first.
     m_settle_generation = m_generation;
     QTimer::singleShot(1500, this, SLOT(wifi_settled()));
@@ -185,7 +185,7 @@ void ChatClient::ensure_token() {
 }
 
 void ChatClient::start_refresh() {
-    ngpt_log("chat: refreshing the access token");
+    nfn_log("chat: refreshing the access token");
     emit progress(QStringLiteral("Signing in..."));
     QByteArray form;
     auto field = [&form](const char *name, QString const &value) {
@@ -201,13 +201,13 @@ void ChatClient::start_refresh() {
     field("resource", QString::fromLatin1(API_RESOURCE));
     QNetworkRequest req((QUrl(TOKEN_URL)));
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
-    req.setRawHeader("User-Agent", "NickleGPT/" NGPT_VERSION);
+    req.setRawHeader("User-Agent", "NickelFootnote/" NFN_VERSION);
     req.setRawHeader("Accept", "application/json");
     m_reply = nam()->post(req, form);
     connect(m_reply, SIGNAL(finished()), this, SLOT(refresh_finished()));
     connect(m_reply, &QNetworkReply::sslErrors, this, [](QList<QSslError> const &errors) {
         for (QSslError const &e : errors)
-            ngpt_log("chat: SSL error: %s", qPrintable(e.errorString()));
+            nfn_log("chat: SSL error: %s", qPrintable(e.errorString()));
     });
     m_timer->start(REFRESH_TIMEOUT_MS);
 }
@@ -224,7 +224,7 @@ void ChatClient::refresh_finished() {
 
     int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
     QByteArray body = reply->readAll();
-    ngpt_log("chat: refresh status=%d error=%d (%s) ssl=%s", status, reply->error(),
+    nfn_log("chat: refresh status=%d error=%d (%s) ssl=%s", status, reply->error(),
              qPrintable(reply->errorString()),
              QSslSocket::supportsSsl() ? qPrintable(QSslSocket::sslLibraryVersionString()) : "none");
     if (reply->property("timedOut").toBool()) {
@@ -239,7 +239,7 @@ void ChatClient::refresh_finished() {
     if (status != 200 || r.value("access_token").toString().isEmpty()) {
         QString code = r.value("error").isObject() ? r.value("error").toObject().value("code").toString()
                                                    : r.value("error").toString();
-        ngpt_log("chat: refresh failed: %s", qPrintable(code.isEmpty() ? QString::number(status) : code));
+        nfn_log("chat: refresh failed: %s", qPrintable(code.isEmpty() ? QString::number(status) : code));
         finish(false, QStringLiteral("Sign-in expired (%1).\n").arg(code.isEmpty() ? QString::number(status) : code) +
                           SIGN_IN_AGAIN);
         return;
@@ -254,11 +254,11 @@ void ChatClient::refresh_finished() {
     m_auth.insert("expires_at", (double)(now_s() + expires_in));
     // The old refresh token is now spent: save the new one before anything else.
     if (!write_file_atomic(AUTH_PATH, QJsonDocument(m_auth).toJson())) {
-        ngpt_log("chat: saving auth.json FAILED");
+        nfn_log("chat: saving auth.json FAILED");
         finish(false, QStringLiteral("Couldn't save the new sign-in tokens.\n") + SIGN_IN_AGAIN);
         return;
     }
-    ngpt_log("chat: token refreshed, expires in %ds", expires_in);
+    nfn_log("chat: token refreshed, expires in %ds", expires_in);
     start_request();
 }
 
@@ -285,7 +285,7 @@ void ChatClient::start_request() {
         body.insert("reasoning", reasoning);
     }
 
-    ngpt_log("chat: request model=%s effort=%s search=%d turns=%d", qPrintable(cfg.model),
+    nfn_log("chat: request model=%s effort=%s search=%d turns=%d", qPrintable(cfg.model),
              cfg.effort.isEmpty() ? "default" : qPrintable(cfg.effort), cfg.webSearch, m_input.size());
     emit progress(QStringLiteral("Asking ChatGPT..."));
 
@@ -293,7 +293,7 @@ void ChatClient::start_request() {
     req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     req.setRawHeader("Accept", "text/event-stream");
     req.setRawHeader("Connection", "close"); // never reuse a possibly dead pooled connection
-    req.setRawHeader("User-Agent", "NickleGPT/" NGPT_VERSION);
+    req.setRawHeader("User-Agent", "NickelFootnote/" NFN_VERSION);
     req.setRawHeader("Authorization", "Bearer " + m_auth.value("access_token").toString().toUtf8());
 
     m_buffer.clear();
@@ -305,7 +305,7 @@ void ChatClient::start_request() {
     m_stall_timer->start(STALL_TIMEOUT_MS);
     connect(m_reply, &QNetworkReply::sslErrors, this, [](QList<QSslError> const &errors) {
         for (QSslError const &e : errors)
-            ngpt_log("chat: SSL error: %s", qPrintable(e.errorString()));
+            nfn_log("chat: SSL error: %s", qPrintable(e.errorString()));
     });
     m_timer->start(REQUEST_TIMEOUT_MS);
 }
@@ -335,7 +335,7 @@ void ChatClient::reply_ready_read() {
         QJsonParseError err;
         QJsonDocument doc = QJsonDocument::fromJson(payload, &err);
         if (err.error != QJsonParseError::NoError) {
-            ngpt_log("chat: bad event JSON (%d bytes)", payload.size());
+            nfn_log("chat: bad event JSON (%d bytes)", payload.size());
             continue;
         }
         handle_event(doc.object());
@@ -380,7 +380,7 @@ void ChatClient::handle_event(QJsonObject const &ev) {
             QString kind = action.value("type").toString();
             QString q = action.value("query").toString();
             QString host = QUrl(action.value("url").toString()).host();
-            ngpt_log("chat: web %s (%d chars)", kind.isEmpty() ? "search" : qPrintable(kind), q.size());
+            nfn_log("chat: web %s (%d chars)", kind.isEmpty() ? "search" : qPrintable(kind), q.size());
             if (!q.isEmpty())
                 emit progress(QStringLiteral("Searched: ") + q);
             else if (!host.isEmpty())
@@ -397,7 +397,7 @@ void ChatClient::handle_event(QJsonObject const &ev) {
     } else if (type == "response.completed") {
         m_completed = true;
         QJsonObject resp = ev.value("response").toObject();
-        ngpt_log("chat: completed (server model %s)", qPrintable(resp.value("model").toString()));
+        nfn_log("chat: completed (server model %s)", qPrintable(resp.value("model").toString()));
         for (QJsonValue item : resp.value("output").toArray())
             for (QJsonValue part : item.toObject().value("content").toArray())
                 for (QJsonValue ann : part.toObject().value("annotations").toArray()) {
@@ -438,7 +438,7 @@ void ChatClient::reply_finished() {
         return;
     }
     int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-    ngpt_log("chat: reply status=%d error=%d (%s) completed=%d ssl=%s", status, reply->error(),
+    nfn_log("chat: reply status=%d error=%d (%s) completed=%d ssl=%s", status, reply->error(),
              qPrintable(reply->errorString()), m_completed,
              QSslSocket::supportsSsl() ? qPrintable(QSslSocket::sslLibraryVersionString()) : "none");
 
@@ -455,7 +455,7 @@ void ChatClient::reply_finished() {
     if (status >= 400) {
         QJsonObject e = QJsonDocument::fromJson(m_error_body).object().value("error").toObject();
         QString msg = e.isEmpty() ? QString::fromUtf8(m_error_body.left(300)) : error_message(e);
-        ngpt_log("chat: HTTP %d: %s", status, qPrintable(msg.left(200)));
+        nfn_log("chat: HTTP %d: %s", status, qPrintable(msg.left(200)));
         if (status == 401)
             msg += QStringLiteral("\n") + SIGN_IN_AGAIN;
         finish(false, QStringLiteral("HTTP %1: %2").arg(status).arg(msg));

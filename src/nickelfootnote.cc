@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-// NickleGPT: ask ChatGPT about the book you're reading, with the series, book
-// and chapter sent along so the answer can stay spoiler-free.
+// NickelFootnote: ask about the book you're reading (answered by ChatGPT), with
+// the series, book and chapter sent along so the answer can stay spoiler-free.
 //
-// Entry points: "Ask ChatGPT" in the text selection menu, and a button in the
+// Entry points: "Ask Footnote" in the text selection menu, and a button in the
 // reading menu's icon row. Only exported libnickel symbols are used; all of
 // them are checked when the plugin loads.
 
@@ -15,6 +15,9 @@
 #include <QObject>
 #include <QString>
 #include <QWidget>
+
+#include <stdio.h>
+#include <sys/stat.h>
 
 #include <NickelHook.h>
 
@@ -70,67 +73,84 @@ static int hook_log_budget = 20;
 
 // Nickel clears and refills the selection menu every time it shows it.
 extern "C" __attribute__((visibility("default")))
-void _ngpt_setupMainOptions(QObject *self) {
+void _nfn_setupMainOptions(QObject *self) {
     SelectionMenuController_setupMainOptions(self);
-    bool active = !ngpt_starting() && ngpt_enabled("selection");
+    bool active = !nfn_starting() && nfn_enabled("selection");
     if (hook_log_budget > 0) {
         hook_log_budget--;
-        ngpt_log("hook: setupMainOptions controller=%p%s", (void*)self, active ? "" : " (passed through)");
+        nfn_log("hook: setupMainOptions controller=%p%s", (void*)self, active ? "" : " (passed through)");
     }
     if (!active)
         return;
-    ngpt_guard_enter("selection", "add item");
+    nfn_guard_enter("selection", "add item");
     if (QWidget *view = SelectionMenuController_menuView(self))
-        NickleGPT::instance()->add_selection_item(self, view);
-    ngpt_guard_leave("selection");
+        Footnote::instance()->add_selection_item(self, view);
+    nfn_guard_leave("selection");
 }
 
 // ReadingMenuController::loadView builds a new ReadingMenuView each time the
 // reading menu opens.
 extern "C" __attribute__((visibility("default")))
-QWidget *_ngpt_ReadingMenuView_ctor(QWidget *self, QWidget *parent, QByteArray const *name, bool flag) {
+QWidget *_nfn_ReadingMenuView_ctor(QWidget *self, QWidget *parent, QByteArray const *name, bool flag) {
     QWidget *ret = ReadingMenuView_ctor(self, parent, name, flag);
-    bool active = !ngpt_starting() && ngpt_enabled("menu");
+    bool active = !nfn_starting() && nfn_enabled("menu");
     if (hook_log_budget > 0) {
         hook_log_budget--;
-        ngpt_log("hook: ReadingMenuView ctor view=%p%s", (void*)self, active ? "" : " (passed through)");
+        nfn_log("hook: ReadingMenuView ctor view=%p%s", (void*)self, active ? "" : " (passed through)");
     }
     if (!active)
         return ret;
-    ngpt_guard_enter("menu", "add button");
-    NickleGPT::instance()->add_reading_menu_button(self);
-    ngpt_guard_leave("menu");
+    nfn_guard_enter("menu", "add button");
+    Footnote::instance()->add_reading_menu_button(self);
+    nfn_guard_leave("menu");
     return ret;
 }
 
-static int ngpt_init() {
+// The plugin was called NickleGPT before 0.1.0. Move its folder (sign-in
+// tokens, settings, per-book edits) to the new name once, before anything
+// creates the new folder. Returns a note for the log, or null.
+static const char *migrate_old_dir() {
+    static const char *OLD_DIR = "/mnt/onboard/.adds/nicklegpt";
+    struct stat st;
+    if (stat(OLD_DIR, &st) != 0 || !S_ISDIR(st.st_mode))
+        return nullptr;
+    if (stat(NFN_DIR, &st) == 0)
+        return "init: both .adds/nicklegpt and .adds/nickelfootnote exist; left the old folder alone";
+    return rename(OLD_DIR, NFN_DIR) == 0 ? "init: moved .adds/nicklegpt to .adds/nickelfootnote"
+                                         : "init: moving .adds/nicklegpt failed";
+}
+
+static int nfn_init() {
     // No Qt objects or blocking work here: init runs while Qt is loading
     // plugins, early in Nickel's startup.
-    ngpt_log("init: %s, selection hook %s", NGPT_VERSION, SelectionMenuController_setupMainOptions ? "on" : "off");
-    ngpt_guard_init(FEATURES);
+    const char *migrated = migrate_old_dir();
+    nfn_log("init: %s, selection hook %s", NFN_VERSION, SelectionMenuController_setupMainOptions ? "on" : "off");
+    if (migrated)
+        nfn_log("%s", migrated);
+    nfn_guard_init(FEATURES);
     ReadingMenuView_ctor = reinterpret_cast<QWidget *(*)(QWidget*, QWidget*, QByteArray const*, bool)>(
-        ngpt_chain_hook("libnickel.so.1.0.0", "_ZN15ReadingMenuViewC1EP7QWidgetRK10QByteArrayb",
-                        reinterpret_cast<void*>(_ngpt_ReadingMenuView_ctor)));
-    ngpt_log("init: done");
+        nfn_chain_hook("libnickel.so.1.0.0", "_ZN15ReadingMenuViewC1EP7QWidgetRK10QByteArrayb",
+                        reinterpret_cast<void*>(_nfn_ReadingMenuView_ctor)));
+    nfn_log("init: done");
     return 0;
 }
 
-static struct nh_info NickleGPTInfo = {
-    .name           = "NickleGPT",
-    .desc           = "Ask ChatGPT about the book you're reading",
-    .uninstall_flag  = "/mnt/onboard/.adds/nicklegpt/uninstall",
+static struct nh_info FootnoteInfo = {
+    .name           = "NickelFootnote",
+    .desc           = "Ask about the book you're reading, without spoilers",
+    .uninstall_flag  = "/mnt/onboard/.adds/nickelfootnote/uninstall",
     .uninstall_xflag = NULL,
     .failsafe_delay  = 10,
 };
 
-static struct nh_hook NickleGPTHook[] = {
-    {.sym = "_ZN23SelectionMenuController16setupMainOptionsEv", .sym_new = "_ngpt_setupMainOptions", .lib = "libnickel.so.1.0.0", .out = nh_symoutptr(SelectionMenuController_setupMainOptions), .desc = "selection menu item", .optional = true},
-    // ReadingMenuView's constructor is hooked in ngpt_init with ngpt_chain_hook
+static struct nh_hook FootnoteHook[] = {
+    {.sym = "_ZN23SelectionMenuController16setupMainOptionsEv", .sym_new = "_nfn_setupMainOptions", .lib = "libnickel.so.1.0.0", .out = nh_symoutptr(SelectionMenuController_setupMainOptions), .desc = "selection menu item", .optional = true},
+    // ReadingMenuView's constructor is hooked in nfn_init with nfn_chain_hook
     // instead, so NickelHardcover's hook on it keeps working.
     {0},
 };
 
-static struct nh_dlsym NickleGPTDlsym[] = {
+static struct nh_dlsym FootnoteDlsym[] = {
     // book and position
     {.name = "_ZNK11ReadingView9getVolumeEv",                    .out = nh_symoutptr(ReadingView_getVolume)},
     {.name = "_ZNK7Content11getDbValuesEv",                      .out = nh_symoutptr(Content_getDbValues)},
@@ -176,8 +196,8 @@ static struct nh_dlsym NickleGPTDlsym[] = {
 };
 
 NickelHook(
-    .init  = ngpt_init,
-    .info  = &NickleGPTInfo,
-    .hook  = NickleGPTHook,
-    .dlsym = NickleGPTDlsym,
+    .init  = nfn_init,
+    .info  = &FootnoteInfo,
+    .hook  = FootnoteHook,
+    .dlsym = FootnoteDlsym,
 )

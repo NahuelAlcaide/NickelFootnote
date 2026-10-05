@@ -7,8 +7,8 @@
 // refresh token rotates on every refresh, so the new tokens are written to
 // disk before they are used, and only one refresh runs at a time.
 
-#ifndef NICKLEGPT_OPENAI_H
-#define NICKLEGPT_OPENAI_H
+#ifndef NICKELFOOTNOTE_OPENAI_H
+#define NICKELFOOTNOTE_OPENAI_H
 
 #include <QByteArray>
 #include <QJsonArray>

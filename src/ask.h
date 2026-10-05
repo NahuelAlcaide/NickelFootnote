@@ -3,8 +3,8 @@
 // The ask flow: entry points (selection menu item, reading menu button), the
 // ask view, the book-info editor and the answer view.
 
-#ifndef NICKLEGPT_ASK_H
-#define NICKLEGPT_ASK_H
+#ifndef NICKELFOOTNOTE_ASK_H
+#define NICKELFOOTNOTE_ASK_H
 
 #include <QJsonArray>
 #include <QObject>
@@ -21,13 +21,13 @@ class QLineEdit;
 class QTextEdit;
 class QTimer;
 class ChatClient;
-class NickleGPT;
+class Footnote;
 
 // Question, book info (always visible) and the quoted passage.
-class AskView : public NgptView {
+class AskView : public NfnView {
     Q_OBJECT
 public:
-    explicit AskView(NickleGPT *app);
+    explicit AskView(Footnote *app);
 protected slots:
     void commit() override;
 private slots:
@@ -35,16 +35,16 @@ private slots:
     void remove_quote();
     void cancel();
 private:
-    NickleGPT *m_app;
+    Footnote *m_app;
     QTextEdit *m_question;
     QWidget *m_quote_box;
 };
 
 // One field per part of the book info. Saved per book.
-class BookInfoView : public NgptView {
+class BookInfoView : public NfnView {
     Q_OBJECT
 public:
-    explicit BookInfoView(NickleGPT *app);
+    explicit BookInfoView(Footnote *app);
 protected slots:
     void commit() override;
     void back() override { cancel(); }
@@ -52,15 +52,15 @@ private slots:
     void cancel();
     void use_detected();
 private:
-    NickleGPT *m_app;
+    Footnote *m_app;
     QLineEdit *m_series, *m_number, *m_title, *m_chapter, *m_percent;
 };
 
 // The conversation, paged (no scrolling on e-ink), and a follow-up field.
-class AnswerView : public NgptView {
+class AnswerView : public NfnView {
     Q_OBJECT
 public:
-    explicit AnswerView(NickleGPT *app);
+    explicit AnswerView(Footnote *app);
     void render(bool toLatest);
     void set_status(QString const &status);
     void text_changed(); // redrawn on the next repaint tick
@@ -78,7 +78,7 @@ private slots:
     void scroll_to_latest();
     void update_pager();
 private:
-    NickleGPT *m_app;
+    Footnote *m_app;
     QTextEdit *m_view;
     QLabel *m_status;
     QLabel *m_page;
@@ -89,11 +89,11 @@ private:
     bool m_want_latest; // page to the latest question once the layout settles
 };
 
-class NickleGPT : public QObject {
+class Footnote : public QObject {
     Q_OBJECT
 
 public:
-    static NickleGPT *instance();
+    static Footnote *instance();
 
     // Appends the Ask item to a selection menu Nickel just filled.
     void add_selection_item(QObject *controller, QWidget *menuView);
@@ -122,9 +122,9 @@ public:
     void save_edit(BookEdit const &e);
     void reset_edit();
 
-    void open_ask(NgptView *replacing);
-    void open_book_info(NgptView *replacing);
-    void ask(QString const &question, NgptView *replacing); // first question
+    void open_ask(NfnView *replacing);
+    void open_book_info(NfnView *replacing);
+    void ask(QString const &question, NfnView *replacing); // first question
     void follow_up(QString const &question);
     void retry_last();
     void end_conversation();
@@ -141,7 +141,7 @@ private slots:
     void chat_finished(bool ok, QString const &text, QString const &error, QStringList const &sources);
 
 private:
-    explicit NickleGPT(QObject *parent = nullptr);
+    explicit Footnote(QObject *parent = nullptr);
     void start(ReadingContext const &ctx);
     void send();
     QString book_key() const;

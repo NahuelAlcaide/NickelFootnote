@@ -27,7 +27,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: NickleGPT version
+      label: NickelFootnote version
       description: The first `init:` line of log.txt shows it.
       placeholder: 0.1.0
   - type: input
@@ -39,5 +39,5 @@ body:
     id: log
     attributes:
       label: log.txt
-      description: Attach or paste `.adds/nicklegpt/log.txt`. If Nickel crashed, also attach `.kobo/stack_00.log`.
+      description: Attach or paste `.adds/nickelfootnote/log.txt`. If Nickel crashed, also attach `.kobo/stack_00.log`.
       render: text

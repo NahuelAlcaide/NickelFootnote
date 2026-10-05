@@ -5,8 +5,8 @@
 // MainWindowController pushes over the book. Deleting the dialog deletes the
 // view. The keyboard is the dialog's own KeyboardFrame.
 
-#ifndef NICKLEGPT_UI_H
-#define NICKLEGPT_UI_H
+#ifndef NICKELFOOTNOTE_UI_H
+#define NICKELFOOTNOTE_UI_H
 
 #include <QDialog>
 #include <QFrame>
@@ -18,7 +18,7 @@ class QLabel;
 class QLineEdit;
 class QTextEdit;
 
-class NgptView : public QFrame {
+class NfnView : public QFrame {
     Q_OBJECT
 
 public:
@@ -38,7 +38,7 @@ private slots:
     void focus_changed(QWidget *old, QWidget *now);
 
 protected:
-    NgptView(QString const &title, bool fullView);
+    NfnView(QString const &title, bool fullView);
 
     // Creates the dialog's keyboard, typing into `first`. Other fields added
     // with add_field() take the keyboard when they get the focus.

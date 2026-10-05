@@ -30,8 +30,8 @@
 #include "nickel.h"
 #include "openai.h"
 
-static const char *SELECTION_CONTROLLER_PROP = "nickleGptController";
-static const char *BUTTON_NAME = "nickleGptButton";
+static const char *SELECTION_CONTROLLER_PROP = "nickelFootnoteController";
+static const char *BUTTON_NAME = "nickelFootnoteButton";
 static const int MAX_QUOTE_CHARS = 3000;     // sent to the model
 static const int SHOWN_QUOTE_CHARS = 280;    // shown in the ask view
 static const int REPAINT_INTERVAL_MS = 2500; // e-ink: redraw the streaming answer rarely
@@ -59,16 +59,16 @@ static const char INSTRUCTIONS[] =
     "important mentions, for example the first mention of each name in an answer. Never put a tag inside\n"
     "another tag or inside **bold** markers.";
 
-NickleGPT *NickleGPT::instance() {
-    static NickleGPT *self = new NickleGPT(qApp);
+Footnote *Footnote::instance() {
+    static Footnote *self = new Footnote(qApp);
     return self;
 }
 
 // Nothing network-related is created here: the instance may be created while
 // Qt is still loading plugins.
-NickleGPT::NickleGPT(QObject *parent) : QObject(parent), m_chat(nullptr) {}
+Footnote::Footnote(QObject *parent) : QObject(parent), m_chat(nullptr) {}
 
-ChatClient *NickleGPT::chat() {
+ChatClient *Footnote::chat() {
     if (!m_chat) {
         m_chat = new ChatClient(this);
         connect(m_chat, SIGNAL(progress(QString)), this, SLOT(chat_progress(QString)));
@@ -79,51 +79,52 @@ ChatClient *NickleGPT::chat() {
     return m_chat;
 }
 
-bool NickleGPT::busy() const {
+bool Footnote::busy() const {
     return m_chat && m_chat->busy();
 }
 
 // --- entry points --------------------------------------------------------------
 
-void NickleGPT::add_selection_item(QObject *controller, QWidget *menuView) {
-    QString text = QStringLiteral("Ask ChatGPT");
+void Footnote::add_selection_item(QObject *controller, QWidget *menuView) {
+    QString text = QStringLiteral("Ask Footnote");
     QWidget *item = SelectionMenuController_createMenuTextItem(controller, menuView, &text);
     if (!item) {
-        ngpt_log("selection: createMenuTextItem returned null");
+        nfn_log("selection: createMenuTextItem returned null");
         return;
     }
-    item->setObjectName("nickleGptSelectionItem");
+    item->setObjectName("nickelFootnoteSelectionItem");
     item->setProperty(SELECTION_CONTROLLER_PROP, QVariant::fromValue<QObject*>(controller));
     SelectionMenuView_addMenuItem(menuView, item);
     bool ok = connect(item, SIGNAL(tapped(bool)), this, SLOT(selection_item_tapped()));
     if (selection_log_budget > 0) {
         selection_log_budget--;
-        ngpt_log("selection: added item=%p view=%p connected=%d", (void*)item, (void*)menuView, ok);
+        nfn_log("selection: added item=%p view=%p connected=%d", (void*)item, (void*)menuView, ok);
     }
 }
 
-void NickleGPT::selection_item_tapped() {
+void Footnote::selection_item_tapped() {
     QObject *item = sender();
     QObject *controller = item ? item->property(SELECTION_CONTROLLER_PROP).value<QObject*>() : nullptr;
-    ngpt_log("selection: Ask tapped (controller=%p)", (void*)controller);
+    nfn_log("selection: Ask tapped (controller=%p)", (void*)controller);
 
-    if (!ngpt_enabled("ask"))
+    if (!nfn_enabled("ask"))
         return;
     // Read the selection before Nickel clears it.
-    ngpt_guard_enter("ask", "read context (selection)");
+    nfn_guard_enter("ask", "read context (selection)");
     ReadingContext ctx = read_context(true);
-    ngpt_guard_leave("ask");
+    nfn_guard_leave("ask");
 
     // SelectionMenuController::clearSelection is a signal: it clears the
     // highlight and closes the menu, like Nickel's own "Undo Highlight".
     if (controller && !QMetaObject::invokeMethod(controller, "clearSelection"))
-        ngpt_log("selection: clearSelection failed");
+        nfn_log("selection: clearSelection failed");
 
     start(ctx);
 }
 
-// A speech bubble with a small sparkle, in the thin line style of the reading
-// menu's icons.
+// The NickelFootnote mark: a speech bubble with a footnote asterisk, in the
+// thin line style of the reading menu's icons. Coordinates are on the 24-unit
+// grid of docs/images/icon.svg; the drawing spans 60% of the side.
 static QPixmap ask_icon(int side) {
     QPixmap pm(side, side);
     pm.fill(Qt::transparent);
@@ -131,32 +132,26 @@ static QPixmap ask_icon(int side) {
     p.setRenderHint(QPainter::Antialiasing);
 
     qreal s = side;
+    qreal f = s * 0.6 / 18; // grid unit; the bubble is 18 units wide
+    auto at = [s, f](qreal u, qreal v) { return QPointF(s / 2 + (u - 12) * f, s / 2 + (v - 12.25) * f); };
     qreal pen = qMax<qreal>(2, s / 26.0);
-    QRectF bubble(s * 0.20, s * 0.22, s * 0.60, s * 0.44);
+
     QPainterPath path;
-    path.addRoundedRect(bubble, s * 0.10, s * 0.10);
+    path.addRoundedRect(QRectF(at(3, 4.5), at(21, 17)), 2 * f, 2 * f);
     QPainterPath tail;
-    tail.moveTo(s * 0.32, bubble.bottom() - pen);
-    tail.lineTo(s * 0.28, s * 0.80);
-    tail.lineTo(s * 0.46, bubble.bottom() - pen);
+    tail.moveTo(at(11, 16.5));
+    tail.lineTo(at(6.8, 20));
+    tail.lineTo(at(6.8, 16.5));
     tail.closeSubpath();
     path = path.united(tail);
     p.setPen(QPen(Qt::black, pen, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
     p.setBrush(Qt::white);
     p.drawPath(path);
 
-    // Four-pointed sparkle in the bubble
-    QPointF c = bubble.center();
-    qreal r = s * 0.13, w = s * 0.035;
-    QPainterPath star;
-    star.moveTo(c.x(), c.y() - r);
-    star.quadTo(c.x() + w, c.y() - w, c.x() + r, c.y());
-    star.quadTo(c.x() + w, c.y() + w, c.x(), c.y() + r);
-    star.quadTo(c.x() - w, c.y() + w, c.x() - r, c.y());
-    star.quadTo(c.x() - w, c.y() - w, c.x(), c.y() - r);
-    p.setPen(Qt::NoPen);
-    p.setBrush(Qt::black);
-    p.drawPath(star);
+    // Six-armed asterisk
+    p.drawLine(at(12, 8), at(12, 13.2));
+    p.drawLine(at(9.75, 9.3), at(14.25, 11.9));
+    p.drawLine(at(14.25, 9.3), at(9.75, 11.9));
     return pm;
 }
 
@@ -165,7 +160,7 @@ static void log_tree(QWidget *w, int depth, int *budget) {
         return;
     (*budget)--;
     QRect g = w->geometry();
-    ngpt_log("tree %*s%s \"%s\" %d,%d %dx%d vis=%d", depth * 2, "", w->metaObject()->className(),
+    nfn_log("tree %*s%s \"%s\" %d,%d %dx%d vis=%d", depth * 2, "", w->metaObject()->className(),
            qPrintable(w->objectName()), g.x(), g.y(), g.width(), g.height(), w->isVisible());
     for (QObject *c : w->children())
         if (c->isWidgetType())
@@ -176,7 +171,7 @@ static void log_tree(QWidget *w, int depth, int *budget) {
 // icon, comboButton) is bottomHorizontalLayout. NickelHardcover's hook runs
 // before ours and inserts its icon before the last item; ours goes right
 // before comboButton, so after Hardcover's.
-void NickleGPT::add_reading_menu_button(QWidget *view) {
+void Footnote::add_reading_menu_button(QWidget *view) {
     if (tree_log_budget > 0)
         view->installEventFilter(this); // logs the widget tree when first shown
 
@@ -184,7 +179,7 @@ void NickleGPT::add_reading_menu_button(QWidget *view) {
         return;
     QHBoxLayout *row = view->findChild<QHBoxLayout*>("bottomHorizontalLayout");
     if (!row) {
-        ngpt_log("menu: no bottomHorizontalLayout in %s", view->metaObject()->className());
+        nfn_log("menu: no bottomHorizontalLayout in %s", view->metaObject()->className());
         return;
     }
 
@@ -211,11 +206,11 @@ void NickleGPT::add_reading_menu_button(QWidget *view) {
     btn->setFixedSize(ref_size);
     row->insertWidget(index, btn);
     bool ok = connect(btn, SIGNAL(tapped(bool)), this, SLOT(reading_menu_button_tapped()));
-    ngpt_log("menu: button added at %d of %d (combo=%d ref=%s %dx%d) connected=%d", index, row->count(),
+    nfn_log("menu: button added at %d of %d (combo=%d ref=%s %dx%d) connected=%d", index, row->count(),
              combo != nullptr, ref ? qPrintable(ref->objectName()) : "none", ref_size.width(), ref_size.height(), ok);
 }
 
-bool NickleGPT::eventFilter(QObject *obj, QEvent *ev) {
+bool Footnote::eventFilter(QObject *obj, QEvent *ev) {
     if (ev->type() == QEvent::Show && obj->isWidgetType() && tree_log_budget > 0) {
         tree_log_budget--;
         int budget = 150;
@@ -225,19 +220,19 @@ bool NickleGPT::eventFilter(QObject *obj, QEvent *ev) {
     return false;
 }
 
-void NickleGPT::reading_menu_button_tapped() {
-    ngpt_log("menu: Ask tapped");
-    if (!ngpt_enabled("ask"))
+void Footnote::reading_menu_button_tapped() {
+    nfn_log("menu: Ask tapped");
+    if (!nfn_enabled("ask"))
         return;
-    ngpt_guard_enter("ask", "read context");
+    nfn_guard_enter("ask", "read context");
     ReadingContext ctx = read_context(false);
-    ngpt_guard_leave("ask");
+    nfn_guard_leave("ask");
     start(ctx);
 }
 
 // --- state ---------------------------------------------------------------------
 
-void NickleGPT::start(ReadingContext const &ctx) {
+void Footnote::start(ReadingContext const &ctx) {
     end_conversation();
     m_detected = ctx;
     m_quote = ctx.selection.left(MAX_QUOTE_CHARS);
@@ -246,26 +241,26 @@ void NickleGPT::start(ReadingContext const &ctx) {
     QTimer::singleShot(0, this, SLOT(open_ask_later()));
 }
 
-void NickleGPT::open_ask_later() {
+void Footnote::open_ask_later() {
     open_ask(nullptr);
 }
 
-QString NickleGPT::book_key() const {
+QString Footnote::book_key() const {
     return m_detected.contentId.isEmpty() ? m_detected.title : m_detected.contentId;
 }
 
-BookEdit NickleGPT::book_edit() const {
+BookEdit Footnote::book_edit() const {
     BookEdit e;
     if (!book_key().isEmpty())
         load_book_edit(book_key(), &e);
     return e;
 }
 
-ReadingContext NickleGPT::effective(QStringList *edited) const {
+ReadingContext Footnote::effective(QStringList *edited) const {
     return apply_book_edit(m_detected, book_edit(), edited);
 }
 
-void NickleGPT::save_edit(BookEdit const &e) {
+void Footnote::save_edit(BookEdit const &e) {
     if (book_key().isEmpty())
         return;
     BookEdit clean = e;
@@ -279,35 +274,35 @@ void NickleGPT::save_edit(BookEdit const &e) {
     if (clean.series.isEmpty() && clean.number.isEmpty() && clean.title.isEmpty() && clean.chapter.isEmpty() &&
         clean.percent < 0) {
         clear_book_edit(book_key());
-        ngpt_log("book info: reset");
+        nfn_log("book info: reset");
     } else {
         save_book_edit(book_key(), clean);
-        ngpt_log("book info: saved");
+        nfn_log("book info: saved");
     }
 }
 
-void NickleGPT::reset_edit() {
+void Footnote::reset_edit() {
     if (!book_key().isEmpty())
         clear_book_edit(book_key());
-    ngpt_log("book info: reset");
+    nfn_log("book info: reset");
 }
 
 // Opens the new view, then closes `replacing`, in the order NickelHardcover
 // uses to go from one dialog to the next.
-void NickleGPT::open_ask(NgptView *replacing) {
-    ngpt_guard_enter("ask", "ask view");
+void Footnote::open_ask(NfnView *replacing) {
+    nfn_guard_enter("ask", "ask view");
     AskView *v = new AskView(this);
-    ngpt_guard_leave("ask");
-    ngpt_log("view: ask (%p)", (void*)v);
+    nfn_guard_leave("ask");
+    nfn_log("view: ask (%p)", (void*)v);
     if (replacing)
         replacing->close_view();
 }
 
-void NickleGPT::open_book_info(NgptView *replacing) {
-    ngpt_guard_enter("ask", "book info view");
+void Footnote::open_book_info(NfnView *replacing) {
+    nfn_guard_enter("ask", "book info view");
     BookInfoView *v = new BookInfoView(this);
-    ngpt_guard_leave("ask");
-    ngpt_log("view: book info (%p)", (void*)v);
+    nfn_guard_leave("ask");
+    nfn_log("view: book info (%p)", (void*)v);
     if (replacing)
         replacing->close_view();
 }
@@ -338,7 +333,7 @@ static QJsonObject message(const char *role, QString const &text) {
     return m;
 }
 
-void NickleGPT::ask(QString const &question, NgptView *replacing) {
+void Footnote::ask(QString const &question, NfnView *replacing) {
     ReadingContext c = effective();
     QString first = position_text(c) + "\n\n";
     if (!m_quote.isEmpty())
@@ -348,7 +343,7 @@ void NickleGPT::ask(QString const &question, NgptView *replacing) {
     m_first_input = QJsonArray();
     m_first_input.append(message("user", first));
 
-    ngpt_log("ask: question %d chars, quote %d chars, position \"%s\"", question.size(), m_quote.size(),
+    nfn_log("ask: question %d chars, quote %d chars, position \"%s\"", question.size(), m_quote.size(),
              qPrintable(c.summary().left(120)));
     Turn t;
     t.question = question;
@@ -358,18 +353,18 @@ void NickleGPT::ask(QString const &question, NgptView *replacing) {
     m_turns << t;
     m_draft.clear();
 
-    ngpt_guard_enter("ask", "answer view");
+    nfn_guard_enter("ask", "answer view");
     m_answer = new AnswerView(this);
-    ngpt_guard_leave("ask");
+    nfn_guard_leave("ask");
     if (replacing)
         replacing->close_view();
     send();
 }
 
-void NickleGPT::follow_up(QString const &question) {
+void Footnote::follow_up(QString const &question) {
     if (busy() || m_turns.isEmpty())
         return;
-    ngpt_log("ask: follow-up %d chars", question.size());
+    nfn_log("ask: follow-up %d chars", question.size());
     Turn t;
     t.question = question;
     t.pending = true;
@@ -377,7 +372,7 @@ void NickleGPT::follow_up(QString const &question) {
     send();
 }
 
-void NickleGPT::retry_last() {
+void Footnote::retry_last() {
     if (busy() || m_turns.isEmpty() || m_turns.last().error.isEmpty())
         return;
     Turn &t = m_turns.last();
@@ -390,7 +385,7 @@ void NickleGPT::retry_last() {
 
 // The input is the first message (with the position) followed by the
 // answered turns; failed turns are left out.
-void NickleGPT::send() {
+void Footnote::send() {
     QJsonArray input;
     for (int i = 0; i < m_turns.size(); i++) {
         Turn const &t = m_turns[i];
@@ -414,19 +409,19 @@ void NickleGPT::send() {
     chat()->send(input, QString::fromUtf8(INSTRUCTIONS));
 }
 
-void NickleGPT::end_conversation() {
+void Footnote::end_conversation() {
     if (m_chat)
         m_chat->cancel();
     m_turns.clear();
     m_first_input = QJsonArray();
 }
 
-void NickleGPT::chat_progress(QString const &status) {
+void Footnote::chat_progress(QString const &status) {
     if (m_answer)
         m_answer->set_status(status);
 }
 
-void NickleGPT::chat_text(QString const &text) {
+void Footnote::chat_text(QString const &text) {
     if (m_turns.isEmpty())
         return;
     m_turns.last().answer = text;
@@ -436,7 +431,7 @@ void NickleGPT::chat_text(QString const &text) {
     }
 }
 
-void NickleGPT::chat_finished(bool ok, QString const &text, QString const &error, QStringList const &sources) {
+void Footnote::chat_finished(bool ok, QString const &text, QString const &error, QStringList const &sources) {
     if (m_turns.isEmpty())
         return;
     Turn &t = m_turns.last();
@@ -449,7 +444,7 @@ void NickleGPT::chat_finished(bool ok, QString const &text, QString const &error
     if (load_config().logAnswers) {
         QString raw = QString(text).replace('\n', QStringLiteral("\\n"));
         for (int i = 0; i < raw.size(); i += 150)
-            ngpt_log("answer[%d]: %s", i / 150, raw.mid(i, 150).toUtf8().constData());
+            nfn_log("answer[%d]: %s", i / 150, raw.mid(i, 150).toUtf8().constData());
     }
     if (m_answer) {
         m_answer->set_status(ok ? QString() : QStringLiteral("Failed."));
@@ -477,7 +472,7 @@ static QString line2(ReadingContext const &c) {
     return p.join(QString::fromUtf8(" \xc2\xb7 "));
 }
 
-AskView::AskView(NickleGPT *app) : NgptView(QStringLiteral("Ask ChatGPT"), false), m_app(app), m_quote_box(nullptr) {
+AskView::AskView(Footnote *app) : NfnView(QStringLiteral("Ask Footnote"), false), m_app(app), m_quote_box(nullptr) {
     int m = px(0.8);
     QVBoxLayout *col = new QVBoxLayout(this);
     col->setContentsMargins(m, m / 2, m, m / 2);
@@ -487,8 +482,8 @@ AskView::AskView(NickleGPT *app) : NgptView(QStringLiteral("Ask ChatGPT"), false
     QStringList edited;
     ReadingContext c = app->effective(&edited);
     QFrame *card = new QFrame(this);
-    card->setObjectName("ngptCard");
-    card->setStyleSheet(QStringLiteral("QFrame#ngptCard { border: 2px solid black; border-radius: %1px; }").arg(m / 2));
+    card->setObjectName("nfnCard");
+    card->setStyleSheet(QStringLiteral("QFrame#nfnCard { border: 2px solid black; border-radius: %1px; }").arg(m / 2));
     QHBoxLayout *cardRow = new QHBoxLayout(card);
     cardRow->setContentsMargins(m / 2, m / 3, m / 2, m / 3);
     QVBoxLayout *info = new QVBoxLayout();
@@ -516,8 +511,8 @@ AskView::AskView(NickleGPT *app) : NgptView(QStringLiteral("Ask ChatGPT"), false
     QString quote = app->quote();
     if (!quote.isEmpty()) {
         m_quote_box = new QFrame(this);
-        m_quote_box->setObjectName("ngptQuote");
-        m_quote_box->setStyleSheet(QStringLiteral("QFrame#ngptQuote { border-left: 4px solid black; }"));
+        m_quote_box->setObjectName("nfnQuote");
+        m_quote_box->setStyleSheet(QStringLiteral("QFrame#nfnQuote { border-left: 4px solid black; }"));
         QHBoxLayout *qrow = new QHBoxLayout(m_quote_box);
         qrow->setContentsMargins(m / 2, 0, 0, 0);
         QVBoxLayout *qcol = new QVBoxLayout();
@@ -556,7 +551,7 @@ AskView::AskView(NickleGPT *app) : NgptView(QStringLiteral("Ask ChatGPT"), false
 
 void AskView::commit() {
     QString q = m_question ? m_question->toPlainText().trimmed() : QString();
-    ngpt_log("ask view: commit (%d chars)", q.size());
+    nfn_log("ask view: commit (%d chars)", q.size());
     if (q.isEmpty())
         return;
     hide_keyboard();
@@ -576,13 +571,13 @@ void AskView::remove_quote() {
 }
 
 void AskView::cancel() {
-    ngpt_log("ask view: cancel");
+    nfn_log("ask view: cancel");
     close_view();
 }
 
 // --- book info view ------------------------------------------------------------------------
 
-BookInfoView::BookInfoView(NickleGPT *app) : NgptView(QStringLiteral("Book info"), false), m_app(app) {
+BookInfoView::BookInfoView(Footnote *app) : NfnView(QStringLiteral("Book info"), false), m_app(app) {
     int m = px(0.8);
     QVBoxLayout *col = new QVBoxLayout(this);
     col->setContentsMargins(m, m / 2, m, m / 2);
@@ -660,8 +655,8 @@ void BookInfoView::cancel() {
 
 // --- answer view --------------------------------------------------------------------------------
 
-AnswerView::AnswerView(NickleGPT *app)
-    : NgptView(QStringLiteral("ChatGPT"), false), m_app(app), m_followup(nullptr),
+AnswerView::AnswerView(Footnote *app)
+    : NfnView(QStringLiteral("Footnote"), false), m_app(app), m_followup(nullptr),
       m_text_dirty(false), m_want_latest(false) {
     int m = px(0.8);
     QVBoxLayout *col = new QVBoxLayout(this);
@@ -737,11 +732,11 @@ bool AnswerView::eventFilter(QObject *obj, QEvent *ev) {
         else
             QTimer::singleShot(0, this, SLOT(update_pager()));
     }
-    return NgptView::eventFilter(obj, ev);
+    return NfnView::eventFilter(obj, ev);
 }
 
 void AnswerView::close_tapped() {
-    ngpt_log("answer view: closed");
+    nfn_log("answer view: closed");
     m_app->end_conversation();
 }
 
@@ -759,9 +754,9 @@ void AnswerView::text_changed() {
 void AnswerView::render(bool toLatest) {
     m_text_dirty = false;
     QString html = tag_swatch_html();
-    QList<NickleGPT::Turn> const &turns = m_app->turns();
+    QList<Footnote::Turn> const &turns = m_app->turns();
     for (int i = 0; i < turns.size(); i++) {
-        NickleGPT::Turn const &t = turns[i];
+        Footnote::Turn const &t = turns[i];
         if (i > 0)
             html += "<hr>";
         html += QStringLiteral("<p><b>You:</b> ") + t.question.toHtmlEscaped().replace("\n", "<br>") + "</p>";
@@ -853,7 +848,7 @@ void AnswerView::commit() {
     if (!m_followup)
         return;
     QString q = m_followup->toPlainText().trimmed();
-    ngpt_log("answer view: follow-up commit (%d chars, busy=%d)", q.size(), m_app->busy());
+    nfn_log("answer view: follow-up commit (%d chars, busy=%d)", q.size(), m_app->busy());
     if (q.isEmpty() || m_app->busy())
         return;
     m_followup->clear();

@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="docs/images/icon.svg" width="96" alt="NickleGPT icon">
+  <img src="docs/images/icon.svg" width="96" alt="NickelFootnote icon">
 </p>
 
-<h1 align="center">NickleGPT</h1>
+<h1 align="center">NickelFootnote</h1>
 
 <p align="center">
   Ask about the book you're reading on your Kobo, without spoilers.<br>
@@ -10,8 +10,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/NahuelAlcaide/NickleGPT/actions/workflows/build.yml"><img src="https://github.com/NahuelAlcaide/NickleGPT/actions/workflows/build.yml/badge.svg" alt="Build"></a>
-  <a href="https://github.com/NahuelAlcaide/NickleGPT/releases/latest"><img src="https://img.shields.io/github/v/release/NahuelAlcaide/NickleGPT?include_prereleases" alt="Latest release"></a>
+  <a href="https://github.com/NahuelAlcaide/NickelFootnote/actions/workflows/build.yml"><img src="https://github.com/NahuelAlcaide/NickelFootnote/actions/workflows/build.yml/badge.svg" alt="Build"></a>
+  <a href="https://github.com/NahuelAlcaide/NickelFootnote/releases/latest"><img src="https://img.shields.io/github/v/release/NahuelAlcaide/NickelFootnote?include_prereleases" alt="Latest release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-blue" alt="License: GPL-3.0-or-later"></a>
 </p>
 
@@ -20,19 +20,19 @@
 </p>
 
 > [!WARNING]
-> NickleGPT patches Kobo's reading software (Nickel) at runtime. It has been
+> NickelFootnote patches Kobo's reading software (Nickel) at runtime. It has been
 > tested on one device and firmware version (see [Compatibility](#compatibility)).
 > It has crash protection and an uninstall switch, but use it at your own risk.
 
 ## What it does
 
 Forgot who a character is, or what happened in a place three books ago? Open
-the reading menu, tap the NickleGPT button and ask. Every question is sent
+the reading menu, tap the Footnote button and ask. Every question is sent
 with where you are in the book (series, book number, chapter and progress),
 and the model is told to answer only from what you've already read.
 
 - **Ask from the reading menu**, or select a passage and choose
-  **Ask ChatGPT** to ask about it.
+  **Ask Footnote** to ask about it.
 - **Check and fix your position before sending.** The series, book, chapter
   and progress are always shown, and you can correct them (saved per book).
 - **Web search** checks facts against wikis and chapter summaries, with
@@ -50,7 +50,7 @@ and the model is told to answer only from what you've already read.
 ### Spoiler protection is not guaranteed
 
 > [!CAUTION]
-> Answers come from a large language model, which is unpredictable. NickleGPT
+> Answers come from a large language model, which is unpredictable. NickelFootnote
 > does its best to keep answers spoiler-free, but **it cannot guarantee it**.
 > Use it at your own risk.
 
@@ -72,7 +72,7 @@ on.
 - **Answers are AI-generated.** They come from OpenAI's models through your
   ChatGPT account and can be wrong, incomplete or invented, even when they
   sound confident and cite sources. Don't treat them as authoritative.
-- **The code was written with AI assistance.** NickleGPT was developed with
+- **The code was written with AI assistance.** NickelFootnote was developed with
   substantial help from an AI coding assistant (Claude Code), with a human
   directing, reviewing and testing every build on a real device.
 
@@ -80,16 +80,16 @@ on.
 
 - A Kobo e-reader. Tested on a **Kobo Clara Colour, firmware 4.45.23697**;
   others may work (see [Compatibility](#compatibility)).
-- A **ChatGPT account with a paid plan** (tested with Plus). NickleGPT uses
+- A **ChatGPT account with a paid plan** (tested with Plus). NickelFootnote uses
   OpenAI's [Sign in with ChatGPT](https://developers.openai.com/siwc/token-sharing-open-source)
   for open-source apps, so questions count against your plan, not an API bill.
 - A computer with **Python 3.9+** for the one-time sign-in.
-- Wi-Fi on the Kobo. NickleGPT connects by itself when you ask.
+- Wi-Fi on the Kobo. NickelFootnote connects by itself when you ask.
 - Asking about a selected passage only works in **kepub** books.
 
 ## Install
 
-1. Download `KoboRoot.tgz` from the [latest release](https://github.com/NahuelAlcaide/NickleGPT/releases/latest).
+1. Download `KoboRoot.tgz` from the [latest release](https://github.com/NahuelAlcaide/NickelFootnote/releases/latest).
 2. Connect the Kobo over USB and copy `KoboRoot.tgz` into the hidden `.kobo`
    folder on the device.
 3. Eject the Kobo. It installs the plugin and restarts.
@@ -110,21 +110,21 @@ if it doesn't) and **removes the tokens from the computer**. They can only
 live in one place, because each refresh replaces them. `pull` moves them back.
 
 The sign-in stays valid as long as the Kobo uses it at least once every
-30 days or so. If it expires, NickleGPT says so; run `login` and `push` again.
+30 days or so. If it expires, NickelFootnote says so; run `login` and `push` again.
 
 ## Use
 
 Open a book, tap the top of the page to show the reading menu, and tap the
-NickleGPT button in the top row. Or select some text and choose
-**Ask ChatGPT**.
+Footnote button (a speech bubble with an asterisk) in the top row. Or select
+some text and choose **Ask Footnote**.
 
-The first 30 seconds after the Kobo starts, NickleGPT stays inactive on
+The first 30 seconds after the Kobo starts, NickelFootnote stays inactive on
 purpose (it keeps startup safe), so the button may be missing right after a
 restart.
 
 ## Settings
 
-`.adds/nicklegpt/config.ini` on the Kobo is created the first time you ask.
+`.adds/nickelfootnote/config.ini` on the Kobo is created the first time you ask.
 Changes apply to the next question. Delete the file to get a fresh copy with
 all options; missing options use their defaults.
 
@@ -139,8 +139,8 @@ all options; missing options use their defaults.
 
 ## Uninstall
 
-Create an empty file named `uninstall` in `.adds/nicklegpt/` on the Kobo and
-restart it. Then delete the `.adds/nicklegpt/` folder, which holds your
+Create an empty file named `uninstall` in `.adds/nickelfootnote/` on the Kobo and
+restart it. Then delete the `.adds/nickelfootnote/` folder, which holds your
 sign-in tokens, settings and log.
 
 If Nickel crashes while starting after an install, NickelHook removes the
@@ -151,9 +151,9 @@ plugin by itself.
 - Your questions, the selected passage and your reading position go to
   OpenAI, under your own ChatGPT account. Nothing goes anywhere else.
 - Requests are sent with `store: false`.
-- The sign-in tokens are stored in `.adds/nicklegpt/auth.json` on the Kobo,
+- The sign-in tokens are stored in `.adds/nickelfootnote/auth.json` on the Kobo,
   which anyone with USB access to the device can read. See [SECURITY.md](SECURITY.md).
-- `.adds/nicklegpt/log.txt` records what the plugin does (hooks, views, request
+- `.adds/nickelfootnote/log.txt` records what the plugin does (hooks, views, request
   steps, errors). It never contains tokens or your questions, and only
   contains answers if you turn on `log_answers`.
 
@@ -163,21 +163,21 @@ plugin by itself.
 |---|---|---|---|
 | Kobo Clara Colour (N367) | 4.45.23697 | Works | @NahuelAlcaide |
 
-NickleGPT checks every Nickel function it needs when it loads and turns off
+NickelFootnote checks every Nickel function it needs when it loads and turns off
 any feature whose functions are missing, so an unsupported firmware should
 mean missing buttons, not a crash. If you try it on another device or
-firmware, please [file a compatibility report](https://github.com/NahuelAlcaide/NickleGPT/issues/new?template=compatibility_report.yml),
+firmware, please [file a compatibility report](https://github.com/NahuelAlcaide/NickelFootnote/issues/new?template=compatibility_report.yml),
 whether it works or not.
 
 ## Troubleshooting
 
 - **No button in the reading menu:** wait 30 seconds after the Kobo starts.
-  If it's still missing, check `.adds/nicklegpt/log.txt` and look for
-  `crashed-*.txt` files there: after a crash, NickleGPT turns off the feature
+  If it's still missing, check `.adds/nickelfootnote/log.txt` and look for
+  `crashed-*.txt` files there: after a crash, NickelFootnote turns off the feature
   that crashed until you delete that file.
 - **"Sign in again on the PC":** the tokens expired or were used from
   the computer after `push`. Run `login` and `push` again.
-- **Bug reports:** please attach `.adds/nicklegpt/log.txt`. For more detail,
+- **Bug reports:** please attach `.adds/nickelfootnote/log.txt`. For more detail,
   see [Debugging](docs/DEVELOPING.md#debugging).
 
 ## Building from source
@@ -186,9 +186,9 @@ Requires Docker (the [NickelTC](https://github.com/pgaskin/NickelTC) image)
 and the NickelHook submodule:
 
 ```sh
-git clone --recurse-submodules https://github.com/NahuelAlcaide/NickleGPT.git
-cd NickleGPT
-./build.ps1        # PowerShell; produces libnicklegpt.so and KoboRoot.tgz
+git clone --recurse-submodules https://github.com/NahuelAlcaide/NickelFootnote.git
+cd NickelFootnote
+./build.ps1        # PowerShell; produces libnickelfootnote.so and KoboRoot.tgz
 ```
 
 Without PowerShell, run the same thing directly:
@@ -208,15 +208,15 @@ Nickel. Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md).
   [NickelTC](https://github.com/pgaskin/NickelTC) by Patrick Gaskin, which make
   Nickel plugins possible.
 - [NickelHardcover](https://codeberg.org/keatonhasse/NickelHardcover) by
-  keatonhasse, whose full-screen dialog approach NickleGPT follows, and which
-  NickleGPT runs alongside (both add a button to the reading menu).
+  keatonhasse, whose full-screen dialog approach NickelFootnote follows, and which
+  NickelFootnote runs alongside (both add a button to the reading menu).
 - The Kobo developer community on [MobileRead](https://www.mobileread.com/forums/).
 
 ## License
 
-Copyright © 2026 Nahuel Alcaide. NickleGPT is free software, licensed under the
+Copyright © 2026 Nahuel Alcaide. NickelFootnote is free software, licensed under the
 [GNU General Public License v3.0 or later](LICENSE).
 
-NickleGPT is an independent project. It is not affiliated with, endorsed by
+NickelFootnote is an independent project. It is not affiliated with, endorsed by
 or sponsored by Rakuten Kobo or OpenAI. Kobo is a trademark of Rakuten Kobo
 Inc.; ChatGPT is a trademark of OpenAI.

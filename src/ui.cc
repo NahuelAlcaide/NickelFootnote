@@ -17,7 +17,7 @@
 #include "store.h"
 #include "ui.h"
 
-NgptView::NgptView(QString const &title, bool fullView)
+NfnView::NfnView(QString const &title, bool fullView)
     : QFrame(), m_keyboard(nullptr), m_receiver_target(nullptr) {
     m_dialog = N3DialogFactory_getDialog(this, true);
     N3Dialog_setTitle(m_dialog, &title);
@@ -33,22 +33,22 @@ NgptView::NgptView(QString const &title, bool fullView)
     m_dialog->show();
 }
 
-void NgptView::close_view() {
+void NfnView::close_view() {
     if (m_dialog)
         m_dialog->deleteLater();
 }
 
-void NgptView::show_keyboard() {
+void NfnView::show_keyboard() {
     if (m_dialog && m_keyboard)
         N3Dialog_showKeyboard(m_dialog);
 }
 
-void NgptView::hide_keyboard() {
+void NfnView::hide_keyboard() {
     if (m_dialog && m_keyboard)
         N3Dialog_hideKeyboard(m_dialog);
 }
 
-int NgptView::px(double scale) {
+int NfnView::px(double scale) {
     int h = qMax(QApplication::primaryScreen()->geometry().height(),
                  QApplication::primaryScreen()->geometry().width());
     return qMax(12, qRound(h * 0.0215 * scale));
@@ -56,12 +56,12 @@ int NgptView::px(double scale) {
 
 // --- keyboard ----------------------------------------------------------------------
 
-void NgptView::setup_keyboard(QWidget *first, QString const &goText) {
+void NfnView::setup_keyboard(QWidget *first, QString const &goText) {
     QWidget *frame = N3Dialog_keyboardFrame(m_dialog);
     QLocale locale(QLocale::English);
     m_keyboard = KeyboardFrame_createKeyboard(frame, 0, &locale);
     if (!m_keyboard) {
-        ngpt_log("ui: createKeyboard returned null");
+        nfn_log("ui: createKeyboard returned null");
         return;
     }
     SearchKeyboardController_setGoText(m_keyboard, &goText);
@@ -72,12 +72,12 @@ void NgptView::setup_keyboard(QWidget *first, QString const &goText) {
     connect(qApp, SIGNAL(focusChanged(QWidget*, QWidget*)), this, SLOT(focus_changed(QWidget*, QWidget*)));
 }
 
-void NgptView::add_field(QWidget *edit) {
+void NfnView::add_field(QWidget *edit) {
     if (!m_fields.contains(edit))
         m_fields << edit;
 }
 
-void NgptView::set_receiver(QWidget *edit, bool nickelStyle) {
+void NfnView::set_receiver(QWidget *edit, bool nickelStyle) {
     void *mem = ::operator new(KeyboardReceiver_size);
     memset(mem, 0, KeyboardReceiver_size);
     if (QTextEdit *te = qobject_cast<QTextEdit*>(edit)) {
@@ -94,25 +94,25 @@ void NgptView::set_receiver(QWidget *edit, bool nickelStyle) {
     m_receiver_target = edit;
 }
 
-void NgptView::focus_changed(QWidget *, QWidget *now) {
+void NfnView::focus_changed(QWidget *, QWidget *now) {
     if (!m_keyboard || !now || now == m_receiver_target)
         return;
     for (QPointer<QWidget> const &f : m_fields) {
         if (f && f == now) {
-            ngpt_log("ui: keyboard now types into %s", now->metaObject()->className());
+            nfn_log("ui: keyboard now types into %s", now->metaObject()->className());
             set_receiver(now, true);
             return;
         }
     }
 }
 
-void NgptView::keyboard_go() {
+void NfnView::keyboard_go() {
     commit();
 }
 
 // --- widgets -----------------------------------------------------------------------
 
-QWidget *NgptView::button(QString const &text, bool primary, const char *slot) {
+QWidget *NfnView::button(QString const &text, bool primary, const char *slot) {
     void *mem = ::operator new(N3ButtonLabel_size);
     memset(mem, 0, N3ButtonLabel_size);
     QWidget *b = N3ButtonLabel_ctor(mem, this);
@@ -125,7 +125,7 @@ QWidget *NgptView::button(QString const &text, bool primary, const char *slot) {
     return b;
 }
 
-QTextEdit *NgptView::text_edit(QString const &placeholder, QWidget **container) {
+QTextEdit *NfnView::text_edit(QString const &placeholder, QWidget **container) {
     void *mem = ::operator new(TouchTextEdit_size);
     memset(mem, 0, TouchTextEdit_size);
     QWidget *touch = TouchTextEdit_ctor(mem, this);
@@ -136,7 +136,7 @@ QTextEdit *NgptView::text_edit(QString const &placeholder, QWidget **container) 
     return touch->findChild<QTextEdit*>();
 }
 
-QLineEdit *NgptView::line_edit() {
+QLineEdit *NfnView::line_edit() {
     void *mem = ::operator new(TouchLineEdit_size);
     memset(mem, 0, TouchLineEdit_size);
     QLineEdit *e = TouchLineEdit_ctor(mem, this);
@@ -145,7 +145,7 @@ QLineEdit *NgptView::line_edit() {
 }
 
 // Styles: "body", "bold", "small", "caption" (small caps heading), "italic".
-QLabel *NgptView::label(QString const &text, const char *style) {
+QLabel *NfnView::label(QString const &text, const char *style) {
     QLabel *l = new QLabel(text, this);
     l->setWordWrap(true);
     l->setTextFormat(Qt::PlainText);

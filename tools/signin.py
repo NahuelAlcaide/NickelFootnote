@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Sign in with ChatGPT on the PC and move the tokens to the Kobo for NickleGPT.
+"""Sign in with ChatGPT on the PC and move the tokens to the Kobo for NickelFootnote.
 
 Standard library only. Commands:
 
@@ -41,13 +41,13 @@ AUTHORIZE_URL = "https://auth.openai.com/api/accounts/authorize"
 TOKEN_URL = "https://auth.openai.com/api/accounts/oauth/token"
 API = "https://api.openai.com/v1"
 SCOPE = "openid profile email offline_access resource.invoke chatgpt.tokens.use.direct"
-APP_NAME = "NickleGPT"
+APP_NAME = "NickelFootnote"
 PORT = 1455
 REDIRECT_URI = f"http://127.0.0.1:{PORT}/auth/callback"
 
 AUTH_FILE = Path(__file__).resolve().parent.parent / ".secrets" / "auth.json"
 TOKEN_KEYS = ("access_token", "refresh_token", "id_token", "expires_at", "scope")
-DEVICE_AUTH = Path(".adds") / "nicklegpt" / "auth.json"
+DEVICE_AUTH = Path(".adds") / "nickelfootnote" / "auth.json"
 
 
 # --- storage -----------------------------------------------------------------
@@ -142,17 +142,17 @@ def cmd_login(_args) -> None:
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.end_headers()
-                self.wfile.write(b"""<!doctype html><p id=m>NickleGPT: finishing sign-in...</p><script>
+                self.wfile.write(b"""<!doctype html><p id=m>NickelFootnote: finishing sign-in...</p><script>
 var h = location.hash.slice(1);
 if (h) location.replace('/auth/callback?' + h + '&_fragment=1');
-else document.getElementById('m').textContent = 'NickleGPT: the callback had no parameters.';
+else document.getElementById('m').textContent = 'NickelFootnote: the callback had no parameters.';
 </script>""")
                 return
             result.update(params)
             self.send_response(200)
             self.send_header("Content-Type", "text/plain; charset=utf-8")
             self.end_headers()
-            self.wfile.write("NickleGPT: you can close this tab.".encode())
+            self.wfile.write("NickelFootnote: you can close this tab.".encode())
 
         def do_POST(self):
             # In case the response is delivered as a form post.
@@ -164,7 +164,7 @@ else document.getElementById('m').textContent = 'NickleGPT: the callback had no 
             self.send_response(200)
             self.send_header("Content-Type", "text/plain; charset=utf-8")
             self.end_headers()
-            self.wfile.write("NickleGPT: you can close this tab.".encode())
+            self.wfile.write("NickelFootnote: you can close this tab.".encode())
 
         def log_message(self, *_):
             pass

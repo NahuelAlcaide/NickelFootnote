@@ -1,4 +1,4 @@
-# Builds libnicklegpt.so and KoboRoot.tgz with the NickelTC Docker image.
+# Builds libnickelfootnote.so and KoboRoot.tgz with the NickelTC Docker image.
 # Usage: .\build.ps1            (build + KoboRoot.tgz)
 #        .\build.ps1 clean
 param([string]$Target = "")
@@ -16,5 +16,5 @@ $version = git -C $src describe --tags --always --dirty 2>$null
 if (-not $version) { $version = "dev" }
 $version = $version -replace '^v', ''
 
-docker run --rm -v "${src}:/src" -w /src $image sh -c "make NGPT_VERSION=$version && make koboroot NGPT_VERSION=$version"
+docker run --rm -v "${src}:/src" -w /src $image sh -c "make NFN_VERSION=$version && make koboroot NFN_VERSION=$version"
 exit $LASTEXITCODE

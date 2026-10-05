@@ -53,13 +53,13 @@ ReadingContext read_context(bool selection) {
     ReadingContext ctx;
     QWidget *rv = find_reading_view();
     if (!rv) {
-        ngpt_log("context: no ReadingView");
+        nfn_log("context: no ReadingView");
         return ctx;
     }
 
     Volume const *vol = ReadingView_getVolume(rv);
     if (!vol || !reinterpret_cast<void* const*>(vol)[1]) { // null d: no book
-        ngpt_log("context: ReadingView has no volume");
+        nfn_log("context: ReadingView has no volume");
         return ctx;
     }
     ctx.found = true;
@@ -81,7 +81,7 @@ ReadingContext read_context(bool selection) {
         if (db_log_budget > 0) {
             db_log_budget--;
             for (auto it = m->constBegin(); it != m->constEnd(); ++it)
-                ngpt_log("context: db %s = %s", qPrintable(it.key()), qPrintable(it.value().toString().left(80)));
+                nfn_log("context: db %s = %s", qPrintable(it.key()), qPrintable(it.value().toString().left(80)));
         }
         m->~QVariantMap();
     }
@@ -103,11 +103,11 @@ ReadingContext read_context(bool selection) {
             WebkitView_selectedText(&text, wv);
             ctx.selection = text.simplified();
         } else {
-            ngpt_log("context: no WebkitView for the selection");
+            nfn_log("context: no WebkitView for the selection");
         }
     }
 
-    ngpt_log("context: id=%s series=\"%s\" #%s title=\"%s\" chapter=\"%s\" pct=%d sel=%d chars",
+    nfn_log("context: id=%s series=\"%s\" #%s title=\"%s\" chapter=\"%s\" pct=%d sel=%d chars",
            qPrintable(ctx.contentId.left(40)), qPrintable(ctx.series), qPrintable(ctx.seriesNumber),
            qPrintable(ctx.title.left(40)), qPrintable(ctx.chapter.left(40)), ctx.percent, ctx.selection.size());
     return ctx;

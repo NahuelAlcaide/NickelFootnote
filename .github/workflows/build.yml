@@ -27,16 +27,16 @@ jobs:
           version=${version#v}
           echo "Version: $version"
           docker run --rm -v "$PWD:/src" -w /src "$NICKELTC" \
-            sh -c "make NGPT_VERSION=$version && make koboroot NGPT_VERSION=$version"
+            sh -c "make NFN_VERSION=$version && make koboroot NFN_VERSION=$version"
 
       # A global named like a libnickel symbol gets bound to Nickel's own copy
       # and crashes Nickel (docs/DEVELOPING.md, lesson 1).
       - name: Check exported symbols
         run: |
           unexpected=$(docker run --rm -v "$PWD:/src" -w /src "$NICKELTC" \
-            arm-nickel-linux-gnueabihf-nm -D --defined-only libnicklegpt.so \
+            arm-nickel-linux-gnueabihf-nm -D --defined-only libnickelfootnote.so \
             | grep -vE ' [Ww] ' \
-            | grep -vE ' (NickelHook|_ngpt_.*|nh_.*|qt_plugin_.*|_init|_fini)$' || true)
+            | grep -vE ' (NickelHook|_nfn_.*|nh_.*|qt_plugin_.*|_init|_fini)$' || true)
           if [ -n "$unexpected" ]; then
             echo "Unexpected exported symbols:"
             echo "$unexpected"

@@ -3,13 +3,13 @@
 ## Reporting a vulnerability
 
 Please report security problems privately through GitHub's
-[private vulnerability reporting](https://github.com/NahuelAlcaide/NickleGPT/security/advisories/new),
+[private vulnerability reporting](https://github.com/NahuelAlcaide/NickelFootnote/security/advisories/new),
 not in a public issue.
 
-## What NickleGPT stores, and where
+## What NickelFootnote stores, and where
 
 - **Sign-in tokens** (`access_token`, `refresh_token`, `id_token`) are in
-  `.adds/nicklegpt/auth.json` on the Kobo's user storage, which anyone with USB
+  `.adds/nickelfootnote/auth.json` on the Kobo's user storage, which anyone with USB
   access to the device can read. They allow using your ChatGPT plan through
   the Responses API. They don't give access to your ChatGPT conversations.
   On the computer, `tools/signin.py` keeps them in `.secrets/auth.json` until

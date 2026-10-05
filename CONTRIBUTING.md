@@ -5,14 +5,14 @@ all welcome.
 
 ## Reporting a bug
 
-Use the [bug report form](https://github.com/NahuelAlcaide/NickleGPT/issues/new?template=bug_report.yml)
-and attach `.adds/nicklegpt/log.txt` from the Kobo. It never contains your
+Use the [bug report form](https://github.com/NahuelAlcaide/NickelFootnote/issues/new?template=bug_report.yml)
+and attach `.adds/nickelfootnote/log.txt` from the Kobo. It never contains your
 tokens or questions, but skim it before posting. If Nickel crashed, also
 attach `.kobo/stack_00.log`.
 
 ## Trying it on another device or firmware
 
-Please [file a compatibility report](https://github.com/NahuelAlcaide/NickleGPT/issues/new?template=compatibility_report.yml),
+Please [file a compatibility report](https://github.com/NahuelAlcaide/NickelFootnote/issues/new?template=compatibility_report.yml),
 whether it works or not. The log's first lines show which hooks were found.
 
 ## Pull requests

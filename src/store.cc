@@ -20,13 +20,13 @@
 #include "log.h"
 #include "store.h"
 
-static const char *CONFIG_PATH = NGPT_DIR "/config.ini";
-static const char *BOOKS_PATH = NGPT_DIR "/books.json";
+static const char *CONFIG_PATH = NFN_DIR "/config.ini";
+static const char *BOOKS_PATH = NFN_DIR "/books.json";
 static const char *DB_PATH = "/mnt/onboard/.kobo/KoboReader.sqlite";
-static const char *DB_CONNECTION = "nicklegpt-readonly";
+static const char *DB_CONNECTION = "nickelfootnote-readonly";
 
 static const char DEFAULT_CONFIG[] =
-    "; NickleGPT settings. Changes apply to the next question.\n"
+    "; NickelFootnote settings. Changes apply to the next question.\n"
     "[chatgpt]\n"
     "; Model slug. gpt-6.1-sol is the default.\n"
     "model=gpt-6.1-sol\n"
@@ -83,7 +83,7 @@ bool write_file_atomic(QString const &path, QByteArray const &data) {
         unlink(tmp.constData());
         return false;
     }
-    int dir = open(NGPT_DIR, O_RDONLY);
+    int dir = open(NFN_DIR, O_RDONLY);
     if (dir >= 0) {
         fsync(dir);
         close(dir);
@@ -123,7 +123,7 @@ static QJsonObject read_books() {
 
 static void write_books(QJsonObject const &books) {
     if (!write_file_atomic(BOOKS_PATH, QJsonDocument(books).toJson()))
-        ngpt_log("store: writing books.json failed");
+        nfn_log("store: writing books.json failed");
 }
 
 bool load_book_edit(QString const &key, BookEdit *e) {
@@ -204,7 +204,7 @@ void lookup_series(QString const &contentId, QString *series, QString *number) {
     {
         QSqlDatabase db = QSqlDatabase::database(DB_CONNECTION, false);
         if (!db.open()) {
-            ngpt_log("series: can't open the database");
+            nfn_log("series: can't open the database");
             return;
         }
         {
@@ -215,7 +215,7 @@ void lookup_series(QString const &contentId, QString *series, QString *number) {
                 s = q.value(0).toString().trimmed();
                 n = q.value(1).toString().trimmed();
             } else if (q.lastError().isValid()) {
-                ngpt_log("series: query failed: %s", qPrintable(q.lastError().text()));
+                nfn_log("series: query failed: %s", qPrintable(q.lastError().text()));
             }
         }
         db.close(); // don't hold the database while Nickel writes to it
@@ -223,7 +223,7 @@ void lookup_series(QString const &contentId, QString *series, QString *number) {
     // "11.0" -> "11"
     if (n.endsWith(".0"))
         n.chop(2);
-    ngpt_log("series: \"%s\" #%s", qPrintable(s), qPrintable(n));
+    nfn_log("series: \"%s\" #%s", qPrintable(s), qPrintable(n));
     cache.insert(contentId, QStringList() << s << n);
     *series = s;
     *number = n;

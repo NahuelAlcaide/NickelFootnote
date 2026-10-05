@@ -3,8 +3,8 @@
 // What the request says about the reader's position: series, book, chapter,
 // progress, and the selected text if the request came from a selection.
 
-#ifndef NICKLEGPT_CONTEXT_H
-#define NICKLEGPT_CONTEXT_H
+#ifndef NICKELFOOTNOTE_CONTEXT_H
+#define NICKELFOOTNOTE_CONTEXT_H
 
 #include <QString>
 

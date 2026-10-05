@@ -1,6 +1,6 @@
 # Architecture
 
-NickleGPT is a Qt plugin that NickelHook loads into Nickel, Kobo's reading
+NickelFootnote is a Qt plugin that NickelHook loads into Nickel, Kobo's reading
 software. It uses only symbols exported by `libnickel.so.1.0.0` and resolves
 all of them when it loads. A feature whose symbols are missing stays off
 instead of crashing.
@@ -19,7 +19,7 @@ Target: firmware 4.45.23697 (Kobo Clara Colour). Qt is 5.2.1.
   `ReadingMenuView`'s constructor, called from `ReadingMenuController::loadView`
   each time the menu opens. NickelHardcover hooks the same constructor, and
   NickelHook's `nh_hook` takes the original function from `dlsym`, so a second
-  plain hook would silently bypass the first. NickleGPT uses its own PLT hook
+  plain hook would silently bypass the first. NickelFootnote uses its own PLT hook
   (`src/chainhook.cc`) that calls whatever was in the GOT before it. The button
   is a Nickel `TouchLabel` inserted into `bottomHorizontalLayout` before
   `comboButton`.
@@ -94,7 +94,7 @@ Stored answers keep the tags, so follow-ups send them back as they were.
   A crash early in Nickel's startup would leave other plugins disabled
   (NickelHook renames each plugin while it starts).
 - **Crash guards:** risky steps mark themselves with a file on disk
-  (`ngpt_guard_enter/leave`). If Nickel dies in between, the next start finds
+  (`nfn_guard_enter/leave`). If Nickel dies in between, the next start finds
   the file, renames it to `crashed-<feature>.txt` and keeps that feature off
   until the file is deleted.
 - **Hidden symbols:** the library is built with `-fvisibility=hidden`; see

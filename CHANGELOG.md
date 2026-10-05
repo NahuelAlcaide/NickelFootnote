@@ -15,3 +15,6 @@ First public release.
   `log_answers` (off by default).
 - `tools/signin.py`: Sign in with ChatGPT on the computer; `push`/`pull` find
   the Kobo by themselves on Windows, macOS and Linux.
+- Renamed from the pre-release name NickleGPT. An existing `.adds/nicklegpt/`
+  folder (sign-in, settings, per-book edits) is moved to
+  `.adds/nickelfootnote/` on first start; remove the old plugin first.

@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-// Files in /mnt/onboard/.adds/nicklegpt: config.ini (model, reasoning effort,
-// web search, tag colours, debug logging), books.json (the reader's
+// Files in /mnt/onboard/.adds/nickelfootnote: config.ini (model, reasoning
+// effort, web search, tag colours, debug logging), books.json (the reader's
 // corrections to the book info, per book), and the series lookup in Nickel's
 // database.
 
-#ifndef NICKLEGPT_STORE_H
-#define NICKLEGPT_STORE_H
+#ifndef NICKELFOOTNOTE_STORE_H
+#define NICKELFOOTNOTE_STORE_H
 
 #include <QString>
 
 #include "context.h"
 
-#define NGPT_DIR "/mnt/onboard/.adds/nicklegpt"
+#define NFN_DIR "/mnt/onboard/.adds/nickelfootnote"
 
 struct Config {
     QString model;  // default gpt-6.1-sol

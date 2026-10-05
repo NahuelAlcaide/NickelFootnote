@@ -1,4 +1,4 @@
-# Developing NickleGPT
+# Developing NickelFootnote
 
 How to build, test and debug the plugin, plus what was learned getting it to
 run. Read [Lessons learned](#lessons-learned) before installing a build of
@@ -9,7 +9,7 @@ your own: some mistakes look like a bricked device (they aren't).
 Requires Docker and the NickelHook submodule (`git submodule update --init`).
 
 ```powershell
-.\build.ps1          # libnicklegpt.so and KoboRoot.tgz
+.\build.ps1          # libnickelfootnote.so and KoboRoot.tgz
 .\build.ps1 clean
 ```
 
@@ -20,33 +20,33 @@ docker run --rm -v "$PWD:/src" -w /src ghcr.io/pgaskin/nickeltc:1.0 sh -c "make 
 ```
 
 The version label (in the log and the User-Agent) comes from
-`git describe --tags`; `build.ps1` and CI pass it to make as `NGPT_VERSION`,
+`git describe --tags`; `build.ps1` and CI pass it to make as `NFN_VERSION`,
 and the Makefile writes it to `src/version.h`. A plain `make` builds as `dev`.
 
 After adding globals, check what the library exports:
 
 ```sh
-arm-nickel-linux-gnueabihf-nm -D --defined-only libnicklegpt.so
+arm-nickel-linux-gnueabihf-nm -D --defined-only libnickelfootnote.so
 ```
 
-Only `NickelHook`, `_ngpt_*`, `nh_*`, `qt_plugin_*`, `_init`/`_fini` and weak
+Only `NickelHook`, `_nfn_*`, `nh_*`, `qt_plugin_*`, `_init`/`_fini` and weak
 Qt inline functions should be there. CI fails on anything else.
 
 ## Code layout
 
 ```text
-src/nicklegpt.cc   NickelHook entry: hooks, dlsym table, init
-src/nickel.h       resolved libnickel function pointers and struct sizes
-src/context.*      reading position (ReadingView, Volume db values, selection)
-src/store.*        config.ini, books.json (per-book edits), series from the DB
-src/openai.*       ChatClient: Wi-Fi, token refresh, streamed request (moc)
-src/ui.*           NgptView: N3Dialog + keyboard base, Nickel widgets, Markdown
-src/ask.*          entry points, controller, ask/book info/answer views (moc)
-src/log.*          persistent log, startup grace, crash guards
-src/chainhook.*    PLT hook that chains to an earlier plugin's hook
-tools/signin.py    PC-side sign-in (login/push/pull) and test commands (models/ask)
-tools/find_callers.py  call-site scanner for libnickel PLT imports
-tools/nickelmenu/  NickelMenu items: debug log dump, plugin recovery
+src/nickelfootnote.cc   NickelHook entry: hooks, dlsym table, init
+src/nickel.h            resolved libnickel function pointers and struct sizes
+src/context.*           reading position (ReadingView, Volume db values, selection)
+src/store.*             config.ini, books.json (per-book edits), series from the DB
+src/openai.*            ChatClient: Wi-Fi, token refresh, streamed request (moc)
+src/ui.*                NfnView: N3Dialog + keyboard base, Nickel widgets, Markdown
+src/ask.*               entry points, controller, ask/book info/answer views (moc)
+src/log.*               persistent log, startup grace, crash guards
+src/chainhook.*         PLT hook that chains to an earlier plugin's hook
+tools/signin.py         PC-side sign-in (login/push/pull) and test commands (models/ask)
+tools/find_callers.py   call-site scanner for libnickel PLT imports
+tools/nickelmenu/       NickelMenu items: debug log dump, plugin recovery
 ```
 
 The model instructions live in `INSTRUCTIONS` in `src/ask.cc`, mirrored in
@@ -59,7 +59,7 @@ There is no emulator, so every test runs on a real device.
 
 - Install: copy `KoboRoot.tgz` to `.kobo/` on the device and eject. Check the
   copy (e.g. `md5sum`) before ejecting.
-- Plugin files: `.adds/nicklegpt/` holds `log.txt` (persistent log),
+- Plugin files: `.adds/nickelfootnote/` holds `log.txt` (persistent log),
   `config.ini`, `books.json`, `auth.json`, and crash-guard files
   (`guard-*`, `crashed-*.txt`).
 - Nickel crash dumps: `.kobo/stack_00.log` (stack of every thread, memory maps,
@@ -69,8 +69,8 @@ There is no emulator, so every test runs on a real device.
 
 ## Debugging
 
-The plugin logs to syslog with the prefix `NickleGPT` and to
-`.adds/nicklegpt/log.txt` (fsynced line by line, because syslog lives in RAM
+The plugin logs to syslog with the prefix `NickelFootnote` and to
+`.adds/nickelfootnote/log.txt` (fsynced line by line, because syslog lives in RAM
 and is lost on a forced power-off). It logs which hooks are active, the
 reading menu's widget tree (once), the detected position, views opened, and
 each request's steps (Wi-Fi, token refresh, HTTP status, SSL library,
@@ -78,9 +78,9 @@ completion). Set `log_answers=true` under `[debug]` in `config.ini` to also log
 each answer's raw text, colour tags included.
 
 `tools/nickelmenu/` holds a NickelMenu item that dumps the syslog to
-`.adds/nicklegpt/debug.txt`. Copy its contents into `.adds/nm/` on the device
-(giving `.adds/nm/nicklegpt_debug` and `.adds/nm/scripts/nicklegpt_debug.sh`);
-"NickleGPT debug log" appears in the main menu after a restart.
+`.adds/nickelfootnote/debug.txt`. Copy its contents into `.adds/nm/` on the device
+(giving `.adds/nm/nickelfootnote_debug` and `.adds/nm/scripts/nickelfootnote_debug.sh`);
+"NickelFootnote debug log" appears in the main menu after a restart.
 
 ## Lessons learned
 
@@ -96,7 +96,7 @@ each answer's raw text, colour tags included.
    each plugin to `*.so.failsafe` while it starts and renames it back after
    its `failsafe_delay`. A crash in that window leaves them renamed and
    NickelHook refuses to activate them. `tools/nickelmenu/recovery/` is a
-   one-off NickelMenu item that renames them back and turns NickleGPT off
+   one-off NickelMenu item that renames them back and turns NickelFootnote off
    (copy it into `.adds/nm/`, run it once, remove it). It refuses to run in
    the first minute after boot, because every plugin is legitimately renamed
    then.
@@ -105,11 +105,11 @@ each answer's raw text, colour tags included.
 5. **Two plugins hooking the same symbol:** NickelHook's `nh_hook` takes the
    original from `dlsym`, not from the GOT, so the second hook silently
    bypasses the first. NickelHardcover hooks `ReadingMenuView`'s constructor,
-   so NickleGPT hooks it with `ngpt_chain_hook`, which calls the previous GOT
-   value. NickelMenu hooks `SelectionMenuController::addMenuItem` (NickleGPT
+   so NickelFootnote hooks it with `nfn_chain_hook`, which calls the previous GOT
+   value. NickelMenu hooks `SelectionMenuController::addMenuItem` (NickelFootnote
    doesn't).
-6. Keep wrapping risky new code in the startup grace (`ngpt_starting()`) and
-   the crash guards (`ngpt_guard_enter/leave`).
+6. Keep wrapping risky new code in the startup grace (`nfn_starting()`) and
+   the crash guards (`nfn_guard_enter/leave`).
 7. Hooks only work for calls that go through libnickel's PLT. Use
    `tools/find_callers.py` to check that a symbol is actually called that way
    (`setupMainOptions` is only reached by a tail call from `configure()`).
